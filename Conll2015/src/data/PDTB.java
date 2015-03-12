@@ -3,13 +3,13 @@ package data;
 import java.util.List;
 
 public class PDTB {
-	TextSpan Arg1;
-	TextSpan Arg2;
-	TextSpan Connective;
-	String DocID;
-	String ID;
-	List<String> Sense;
-	String Type;
+	public TextSpan Arg1;
+	public TextSpan Arg2;
+	public TextSpan Connective;
+	public String DocID;
+	public String ID;
+	public List<String> Sense;
+	public String Type;
 	/**
 	 * @param args
 	 */

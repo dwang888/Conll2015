@@ -9,8 +9,8 @@ public class SentParse {
 
 	List<List<String>> dependencies;//element: depType, depHead, depDependent
 	String parsetree;
-	List<Object> words;//["important", {"CharacterOffsetBegin": 4641, "CharacterOffsetEnd": 4650, "Linkers": ["arg2_14904", "arg2_14905"], "PartOfSpeech": "JJ"}]
-
+	public List<Object> words;//["important", {"CharacterOffsetBegin": 4641, "CharacterOffsetEnd": 4650, "Linkers": ["arg2_14904", "arg2_14905"], "PartOfSpeech": "JJ"}]
+	public List<WordInParse> wordsInParse;
 	/**
 	 * get token list
 	 * */

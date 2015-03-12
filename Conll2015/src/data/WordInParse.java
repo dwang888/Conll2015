@@ -9,7 +9,7 @@ public class WordInParse {
 	String pos;
 	int startOffset;
 	int endOffset;
-	List<String> linkers;
+	public List<String> linkers;
 	
 	public WordInParse(String t, String p, int start, int end, List<String> lks){
 		this.text = t;
