@@ -8,7 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 public class SentParse {
 
 	List<List<String>> dependencies;//element: depType, depHead, depDependent
-	String parsetree;
+	public String parsetree;
 	public List<Object> words;//["important", {"CharacterOffsetBegin": 4641, "CharacterOffsetEnd": 4650, "Linkers": ["arg2_14904", "arg2_14905"], "PartOfSpeech": "JJ"}]
 	public List<WordInParse> wordsInParse;
 	/**

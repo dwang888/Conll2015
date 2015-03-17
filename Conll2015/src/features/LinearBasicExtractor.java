@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -25,6 +26,8 @@ import data.DocParse;
 import data.PDTB;
 import data.SentParse;
 import data.WordInParse;
+import edu.stanford.nlp.trees.PennTreeReader;
+import edu.stanford.nlp.trees.Tree;
 
 public class LinearBasicExtractor {
 
@@ -39,20 +42,24 @@ public class LinearBasicExtractor {
 			while((line = br.readLine()) != null){
 				PDTB pdtbObj = (PDTB) gson.fromJson(line, PDTB.class);
 				
-//				System.out.println("info from PDTB object:\t" + pdtbObj.DocID);
-//				System.out.println("info from PDTB object:\t" + pdtbObj.ID);
-//				System.out.println("info from PDTB object:\t" + pdtbObj.Type);
-//				System.out.println("info from PDTB object:\t" + pdtbObj.Sense);
+//				System.out.println("DocID from PDTB object:\t" + pdtbObj.DocID);
+//				System.out.println("ID from PDTB object:\t" + pdtbObj.ID);
+//				System.out.println("type from PDTB object:\t" + pdtbObj.Type);
+//				System.out.println("sense from PDTB object:\t" + pdtbObj.Sense);
 //				System.out.println("info from PDTB object:\t" + Arrays.toString(pdtbObj.Connective.CharacterSpanList.toArray()));
 //				if(pdtbObj.Arg2.CharacterSpanList.size() > 1){
-//					System.out.println(pdtbObj.Arg2.RawText);
-//					String rawTextArg2 = pdtbObj.Arg2.RawText;
-//					int startOffset = pdtbObj.Arg2.CharacterSpanList.get(1)[0];
-//					int endOffset = pdtbObj.Arg2.CharacterSpanList.get(1)[1];
-//					System.out.println(startOffset + "||" + endOffset);
-//					System.out.println(rawText.substring(startOffset, endOffset));
-//					System.out.println(pdtbObj.Arg2.RawText);					
-//				}
+				if((pdtbObj.Arg2.CharacterSpanList.size() > 1 || pdtbObj.Arg1.CharacterSpanList.size() > 1)){
+					System.out.println(pdtbObj.Type);
+					System.out.println(pdtbObj.Arg1.RawText);
+					
+					System.out.println(pdtbObj.Arg2.RawText);
+					String rawTextArg2 = pdtbObj.Arg2.RawText;
+					int startOffset = pdtbObj.Arg2.CharacterSpanList.get(1)[0];
+					int endOffset = pdtbObj.Arg2.CharacterSpanList.get(1)[1];
+					System.out.println(startOffset + "||" + endOffset);
+					System.out.println(rawText.substring(startOffset, endOffset));
+					System.out.println("-----------------");					
+				}
 				pdtbObjs.add(pdtbObj);
 			}			
 			
@@ -89,7 +96,8 @@ public class LinearBasicExtractor {
 //				SentParse parseObj = (SentParse) gson.fromJson(jobj.get(docID), SentParse.class);
 //				System.out.println(docPparseObj.sentences);
 				for(SentParse parse : docPparseObj.sentences){
-//					System.out.println(parse.parsetree);
+//					System.out.println(parse);					
+//					System.out.println(parse.parsetree.trim());
 //					System.out.println(parse.dependencies);
 //					System.out.println(parse.getTokensListText());
 					List<WordInParse> wordsInParse = new ArrayList<WordInParse>();
@@ -106,13 +114,15 @@ public class LinearBasicExtractor {
 						WordInParse wordInParse = new WordInParse(tokenText, pos, beginOffset, endOffset, linkers);
 //						WordInParse wordInParse = new WordInParse(word);
 //						System.out.println(beginOffset);
-//						System.out.println(wordInParse.linkers);
+//						System.out.println(wordInParse.);
 						
 //						WordInParse wordObj = (WordInParse) gson.fromJson(parse.words.get(i), WordInParse.class);
 						wordsInParse.add(wordInParse);
 					}
 					parse.wordsInParse = wordsInParse;
 					sentParses.add(parse);
+					System.out.println(parse.getTokensList());
+					System.out.println(parse.getTokensList().size());
 //					for(WordInParse (WordInParse)word : parse.words){
 //						System.out.println(word);
 //					}
@@ -150,6 +160,33 @@ public class LinearBasicExtractor {
 		}
 	}
 	
+	public void loadTrees(String path){
+		try {
+			Reader reader = new FileReader(path);
+			System.out.println(reader);
+			
+			PennTreeReader treeReader = new PennTreeReader(reader);
+			Tree tree;
+			while((tree = treeReader.readTree()) != null){
+				System.out.println("-----------");
+				System.out.println(tree.getLeaves());
+				List<Tree> subtrees = tree.subTreeList();
+				List<Tree> nodes = tree.pathNodeToNode(subtrees.get(2), subtrees.get(8));
+				for(Tree node : nodes){
+					System.out.println(node.label().toString());
+				}
+				
+//				tree = treeReader.readTree();
+			}
+			
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	
 	/**
 	 * @param args
@@ -161,7 +198,8 @@ public class LinearBasicExtractor {
 		String rawPath = "D:\\projects\\conll2015\\data\\raw_train\\wsj_1000";
 		LinearBasicExtractor tester = new LinearBasicExtractor();
 		List<PDTB> pdtbObjs = tester.loadPDTB(pdtbPath, rawPath);
-		List<SentParse> sentParses = tester.loadParse(parsePath);
+//		List<SentParse> sentParses = tester.loadParse(parsePath);
+//		tester.loadTrees(parsePath);
 	}
 
 }
