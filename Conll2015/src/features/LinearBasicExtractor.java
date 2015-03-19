@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -48,14 +50,15 @@ public class LinearBasicExtractor {
 //				System.out.println("sense from PDTB object:\t" + pdtbObj.Sense);
 //				System.out.println("info from PDTB object:\t" + Arrays.toString(pdtbObj.Connective.CharacterSpanList.toArray()));
 //				if(pdtbObj.Arg2.CharacterSpanList.size() > 1){
-				if((pdtbObj.Arg2.CharacterSpanList.size() > 1 || pdtbObj.Arg1.CharacterSpanList.size() > 1)){
+//				if((pdtbObj.Arg2.CharacterSpanList.size() > 1 || pdtbObj.Arg1.CharacterSpanList.size() > 1)){
+				if(!pdtbObj.Type.equalsIgnoreCase("Explicit")){
 					System.out.println(pdtbObj.Type);
-					System.out.println(pdtbObj.Arg1.RawText);
-					
-					System.out.println(pdtbObj.Arg2.RawText);
-					String rawTextArg2 = pdtbObj.Arg2.RawText;
-					int startOffset = pdtbObj.Arg2.CharacterSpanList.get(1)[0];
-					int endOffset = pdtbObj.Arg2.CharacterSpanList.get(1)[1];
+					System.out.println(pdtbObj.Sense);
+					System.out.println("Arg1:\t" + pdtbObj.Arg1.RawText);					
+					System.out.println("Arg2:\t" + pdtbObj.Arg2.RawText);
+//					String rawTextArg2 = pdtbObj.Arg2.RawText;
+					int startOffset = pdtbObj.Arg2.CharacterSpanList.get(0)[0];
+					int endOffset = pdtbObj.Arg2.CharacterSpanList.get(0)[1];
 					System.out.println(startOffset + "||" + endOffset);
 					System.out.println(rawText.substring(startOffset, endOffset));
 					System.out.println("-----------------");					
@@ -160,21 +163,26 @@ public class LinearBasicExtractor {
 		}
 	}
 	
-	public void loadTrees(String path){
+	public List<Tree> loadTrees(String path){
+		List<Tree> trees = new ArrayList<Tree>();
 		try {
+			
 			Reader reader = new FileReader(path);
 			System.out.println(reader);
 			
 			PennTreeReader treeReader = new PennTreeReader(reader);
 			Tree tree;
 			while((tree = treeReader.readTree()) != null){
-				System.out.println("-----------");
-				System.out.println(tree.getLeaves());
+				trees.add(tree);
+//				System.out.println("-----------");
+//				System.out.println(tree.getLeaves());
+//				System.out.println(StringUtils.join(tree.getLeaves(), " "));
+				
 				List<Tree> subtrees = tree.subTreeList();
 				List<Tree> nodes = tree.pathNodeToNode(subtrees.get(2), subtrees.get(8));
-				for(Tree node : nodes){
-					System.out.println(node.label().toString());
-				}
+//				for(Tree node : nodes){
+//					System.out.println(node.label().toString());
+//				}
 				
 //				tree = treeReader.readTree();
 			}
@@ -186,6 +194,83 @@ public class LinearBasicExtractor {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		return trees;
+	}
+	
+	/**
+	 * whether a contain b or vice versa
+	 * */
+	public boolean ifContain(Tree a, Tree b){
+		if(a.subTrees().contains(b) || b.subTrees().contains(a)){
+			return true;
+		}else{
+			return false;
+		}
+	}
+	
+	/**
+	 * extract S tree pairs from current sentence
+	 * */
+	public List<Tree[]> extractPairsInSentence(Tree tree){
+		List<Tree[]> pairs = new ArrayList<Tree[]>();
+		List<Tree> subtrees = tree.subTreeList();
+		List<Tree> subSents = new ArrayList<Tree>();
+		
+		System.out.println(StringUtils.join(tree.getLeaves(), " "));
+		for(int j = 0; j < subtrees.size(); j++){
+			Tree subtree = subtrees.get(j);
+			//exclude whole tree itself
+			if(subtree.getLeaves().size() == tree.getLeaves().size()){
+//				System.out.println(curTree + "----" + subtree);
+				continue;
+			}
+			
+			if(subtree.nodeString().equalsIgnoreCase("S")){
+				subSents.add(subtree);
+//				System.out.println(StringUtils.join(subtree.getLeaves(), " "));
+			}			
+			
+		}
+		
+		//no or just 1 sub sentence
+		if(subSents.size() <= 1){
+			return pairs;
+		}
+		
+		for(int i = 0; i < subSents.size()-1; i++){
+			for(int j = i+1; j < subSents.size(); j++){
+				if(!ifContain(subSents.get(i),subSents.get(j))){
+					Tree[] pair = new Tree[]{subSents.get(i), subSents.get(j)};
+					pairs.add(pair);
+				}
+			}
+		}
+		
+		return pairs;		
+	}
+	
+	public List<List<String>> capturePairs(List<Tree> trees){
+		List<List<String>> fvs = new ArrayList<List<String>>();
+		
+		Tree curTree;
+		Tree prevTree;
+		Tree nextTree;
+		
+		for(int i = 0; i < trees.size(); i++){
+			curTree = trees.get(i);
+			prevTree = i>=1 ? trees.get(i-1) : null;
+			nextTree = i<trees.size()-1 ? trees.get(i+1) : null;
+			
+			//extract pairs in current tree;
+			List<Tree[]> pairsInCurrentSent = extractPairsInSentence(curTree);
+			
+			
+			
+			
+			System.out.println(pairsInCurrentSent.size() + "------------------");
+		}
+		
+		return fvs;
 	}
 	
 	/**
@@ -197,9 +282,10 @@ public class LinearBasicExtractor {
 		String parsePath = "D:\\projects\\conll2015\\data\\pdtb_trial_parses.json";
 		String rawPath = "D:\\projects\\conll2015\\data\\raw_train\\wsj_1000";
 		LinearBasicExtractor tester = new LinearBasicExtractor();
-		List<PDTB> pdtbObjs = tester.loadPDTB(pdtbPath, rawPath);
+//		List<PDTB> pdtbObjs = tester.loadPDTB(pdtbPath, rawPath);
 //		List<SentParse> sentParses = tester.loadParse(parsePath);
-//		tester.loadTrees(parsePath);
+		List<Tree> trees = tester.loadTrees(parsePath);
+		tester.capturePairs(trees);
 	}
 
 }
