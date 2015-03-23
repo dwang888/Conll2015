@@ -5,10 +5,10 @@ import java.util.List;
 import com.google.gson.internal.LinkedTreeMap;
 
 public class WordInParse {
-	String text;
-	String pos;
-	int startOffset;
-	int endOffset;
+	public String text;
+	public String pos;
+	public int startOffset;
+	public int endOffset;
 	public List<String> linkers;
 	
 	public WordInParse(String t, String p, int start, int end, List<String> lks){
