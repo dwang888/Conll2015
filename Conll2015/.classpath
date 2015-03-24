@@ -22,5 +22,6 @@
 			<attribute name="javadoc_location" value="jar:platform:/resource/Conll2015/libs/stanford-corenlp-3.5.1-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="libs/commons-io-2.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
