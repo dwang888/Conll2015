@@ -16,8 +16,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
@@ -25,6 +27,8 @@ import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
@@ -112,36 +116,26 @@ public class TrainingDataLoader {
 		return rawTextHash;
 	}
 	
-	public List<SentParse> loadParse(String path){
+	public Map<String, List<SentParse>> loadParse(String path){
 		Gson gson = new Gson();
 		JsonParser jsonParser = new JsonParser();
 		System.out.println("Reading parses from a JSON file:\t" + path);
-		BufferedReader br;
-		List<SentParse> sentParses = new ArrayList<SentParse>();
-		
+		BufferedReader br;		
+		Map<String, List<SentParse>> parseDocHash = new HashMap<String, List<SentParse>>();		
 		File file = new File(path);
 		String content;
+		
 		try {
 			content = FileUtils.readFileToString(file);
 			JsonObject jobj= jsonParser.parse(content).getAsJsonObject();
-//			System.out.println(jobj.getAsJsonArray().size());
-			System.out.println(content.split("\\r").length);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
-		try {
-			br = new BufferedReader(new FileReader(path));
-			String line;
-			String docID = "wsj_1000";
-			while((line = br.readLine()) != null){
-//				PDTB docParseObj = (PDTB) gson.fromJson(line, PDTB.class);
-				JsonObject jobj= jsonParser.parse(line).getAsJsonObject();
-				jobj.getAsJsonObject(docID).getAsJsonArray("sentences");
-				DocParse docPparseObj = (DocParse) gson.fromJson(jobj.get(docID), DocParse.class);
-//				SentParse parseObj = (SentParse) gson.fromJson(jobj.get(docID), SentParse.class);
-				System.out.println(line);
+			Set<Entry<String,JsonElement>> jsonSet = jobj.entrySet();
+			Iterator<Entry<String,JsonElement>> itr = jsonSet.iterator();
+			while(itr.hasNext()){
+				List<SentParse> sentParses = new ArrayList<SentParse>();
+				Entry<String,JsonElement> entry = itr.next();
+				String docID = entry.getKey();
+				DocParse docPparseObj = (DocParse) gson.fromJson(entry.getValue(), DocParse.class);
+				System.out.println(docID);
 				for(SentParse parse : docPparseObj.sentences){
 //					System.out.println(parse);					
 //					System.out.println(parse.parsetree.trim());
@@ -174,15 +168,18 @@ public class TrainingDataLoader {
 //						System.out.println(word);
 //					}
 				}
+				parseDocHash.put(docID, sentParses);
 			}
-		} catch (JsonSyntaxException | IOException e) {
+			
+		} catch (IOException e1) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			e1.printStackTrace();
 		}
 		
-		System.out.format("\n\n%d PDTB parse loaded \n\n", sentParses.size());
 		
-		return sentParses;
+		System.out.format("\n\n %d documents PDTB parse loaded \n\n", parseDocHash.size());
+		
+		return parseDocHash;
 	}
 	
 	public String readTxt(String path){	    
@@ -199,14 +196,18 @@ public class TrainingDataLoader {
 	
 	public void extract(String pathRaw, String pathParse, String pathPDTB){
 		List<PDTB> pdtbObjs = loadPDTB(pathPDTB, pathRaw);
-		List<SentParse> sentParses = loadParse(pathParse);
-		
-		for(int i = 0; i < sentParses.size(); i++){
-			SentParse sentParse = sentParses.get(i);
-			for(int j = 0; j < sentParse.words.size(); j++){
-				List<Object> word = (List<Object>) sentParse.words.get(i);
+		Map<String, List<SentParse>> sentParseHash = loadParse(pathParse);
+		Set<String> keys = sentParseHash.keySet();
+		for(String key : keys){
+			List<SentParse> sentParses = sentParseHash.get(key);
+			for(int i = 0; i < sentParses.size(); i++){
+				SentParse sentParse = sentParses.get(i);
+				for(int j = 0; j < sentParse.words.size(); j++){
+					List<Object> word = (List<Object>) sentParse.words.get(i);
+				}
 			}
 		}
+		
 	}
 	
 	public List<Tree> loadTrees(String path){
@@ -450,7 +451,7 @@ public class TrainingDataLoader {
 		String rawPath = "D:\\projects\\conll2015\\data\\conll15st-train-dev\\conll15st_data\\conll15-st-03-04-15-train\\raw\\";
 		TrainingDataLoader loader = new TrainingDataLoader();
 //		List<PDTB> pdtbObjs = loader.loadPDTB(pdtbPath, rawPath);
-		List<SentParse> sentParses = loader.loadParse(parsePath);
+		Map<String, List<SentParse>> sentParses = loader.loadParse(parsePath);
 //		List<Tree> trees = loader.loadTrees(parsePath);
 //		trees = loader.mergeWordInfo2Tree(trees, sentParses);
 //		List<Tree[]> pairs = loader.capturePairs(trees);
